@@ -1,0 +1,16 @@
+title: Keepalived VRRP Monitoring
+agents: linux
+author: Mayr Stefan
+license: GPL
+distribution: none
+description:
+  Monitors all VRRP instances of keepalived
+
+perfdata:
+  A couple of error counters
+
+item:
+  VRRP instance
+
+inventory:
+  Automatic inventory of all VRRP instances. One service is created for each instance.
