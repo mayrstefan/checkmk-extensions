@@ -30,16 +30,17 @@ def create_mkp(directory):
         print('Add file info')
         tar.add(info_filename, 'info')
         print('Add file info.json')
-        info_fileobj = io.BytesIO()
-        info_fileobj.write(json.dumps(info).encode())
-        info_fileobj.seek(0)
-        tar.addfile(get_tarinfo('info.json', info_fileobj), info_fileobj)
+        infojson_fileobj = io.BytesIO()
+        infojson_fileobj.write(json.dumps(info).encode())
+        infojson_fileobj.seek(0)
+        tar.addfile(get_tarinfo('info.json', infojson_fileobj), infojson_fileobj)
         for folder in info['files']:
             folder_tarname = '%s.tar' % folder
-            print('Add folder %s as %s' % (folder, folder_tarname))
             folder_fileobj = io.BytesIO()
             with tarfile.open(folder_tarname, 'w:', fileobj = folder_fileobj) as folder_tar:
-                folder_tar.add('%s/%s' % (directory, folder), '')
+                for filename in info['files'][folder]:
+                    print('Add %s/%s to %s' % (folder, filename, folder_tarname))
+                    folder_tar.add('%s/%s/%s' % (directory, folder, filename), arcname=filename)
                 folder_fileobj.seek(0)
                 tar.addfile(get_tarinfo(folder_tarname, folder_fileobj), folder_fileobj)
 
