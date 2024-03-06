@@ -36,9 +36,12 @@ def check_keepalived_vrrp(item, section):
             # all metrics we have are simple counters
             for k, v in instance['stats'].items():
                 yield Metric('keepalived_%s' % k, v)
+            vips = '-' # default: empty
+            if 'vips' in instance['data']:
+                vips = ", ".join(instance['data']['vips'])
             yield Result(
                     state = state,
-                    summary = "State: %s, VIPs: %s" % (state_pretty, ", ".join(instance['data']['vips'])))
+                    summary = "State: %s, VIPs: %s" % (state_pretty, vips))
             return
 
 register.agent_section(
