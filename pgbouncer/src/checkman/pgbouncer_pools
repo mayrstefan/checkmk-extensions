@@ -1,0 +1,16 @@
+title: PgBouncer Pool Monitoring
+agents: linux
+author: Mayr Stefan
+license: GPL
+distribution: none
+description:
+  Monitors all pools of PgBouncer instances
+
+perfdata:
+  Maximum wait time and all other counters from SHOW POOLS
+
+item:
+  Pool: instance/database/user
+
+inventory:
+  Automatic inventory of all pools of the configured instances. One service is created for each pool.

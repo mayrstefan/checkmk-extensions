@@ -1,0 +1,16 @@
+title: PgBouncer Database Monitoring
+agents: linux
+author: Mayr Stefan
+license: GPL
+distribution: none
+description:
+  Monitors all databases of PgBouncer instances
+
+perfdata:
+  Connection usage and all other counters from SHOW DATABASES
+
+item:
+  Database: instance/database
+
+inventory:
+  Automatic inventory of all databases of the configured instances. One service is created for each database.
