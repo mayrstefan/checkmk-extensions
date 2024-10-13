@@ -421,8 +421,7 @@ class PgbouncerWin(PgbouncerBase):
     @classmethod
     def _logical_drives(cls):
         # type: () -> Iterable[str]
-        for drive in cls._parse_wmic_logicaldisk(cls._call_wmic_logicaldisk()):
-            yield drive
+        yield from cls._parse_wmic_logicaldisk(cls._call_wmic_logicaldisk())
 
     def get_psql_binary_path(self):
         # type: () -> str
@@ -477,7 +476,7 @@ class PgbouncerWin(PgbouncerBase):
         """Get the pgbouncer version and the time for the query connection"""
 
         # TODO: Verify this time measurement
-        start_time = time.time()
+        start_time = time.time() # pylint: disable=possibly-used-before-assignment
         out = self.get_server_version()
         diff = time.time() - start_time
         return out, "%.3f" % diff
@@ -572,7 +571,7 @@ class PgbouncerLinux(PgbouncerBase):
 
     def get_version_and_connection_time(self):
         # type: () -> tuple[str, str]
-        usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
+        usage_start = resource.getrusage(resource.RUSAGE_CHILDREN) # pylint: disable=possibly-used-before-assignment
         out = self.get_server_version()
         usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
 
