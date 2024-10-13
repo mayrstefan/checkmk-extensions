@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import json
 from pathlib import Path
 from typing import TypedDict, List
 
@@ -55,7 +54,7 @@ def _get_linux_cfg_lines(cfg: dict) -> List[str]:
         lines.append('KEEPALIVED_STATUS_JSON="%s"' % quote_shell_string(cfg['jsonfile']))
     return lines
 
-def get_keepalived_vrrp_scriptlets(conf: keepalived_vrrpBakeryConfig) -> ScriptletGenerator:
+def get_keepalived_vrrp_scriptlets(conf: keepalived_vrrpBakeryConfig) -> ScriptletGenerator: # pylint: disable=unused-argument
     installed_lines = ['logger -p Checkmk_Agent "Installed keepalived_vrrp.sh"']
     uninstalled_lines = ['logger -p Checkmk_Agent "Uninstalled keepalived_vrrp.sh"']
 

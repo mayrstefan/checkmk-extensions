@@ -11,7 +11,6 @@ from cmk.gui.valuespec import (
     Dictionary,
     ListOf,
     Migrate,
-    TextAscii,
     TextInput,
 )
 
@@ -127,4 +126,3 @@ rulespec_registry.register(
         name="agent_config:pgbouncer",
         valuespec=_valuespec_pgbouncer,
     ))
-

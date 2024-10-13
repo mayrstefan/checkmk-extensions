@@ -21,8 +21,8 @@ def get_tarinfo(name, obj):
 def create_mkp(directory):
     info = {}
     info_filename = '%s/info' % directory
-    with open(info_filename, 'r') as info_file:
-        info = eval(info_file.read())
+    with open(info_filename, 'r', encoding='utf-8') as info_file:
+        info = eval(info_file.read()) # pylint: disable=eval-used
 
     mkp_filename = '%s-%s.mkp' % (info['name'], info['version'])
     with tarfile.open(mkp_filename, 'w:gz') as tar:

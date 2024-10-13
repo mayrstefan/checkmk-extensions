@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from .agent_based_api.v1 import Metric, register, Result, Service, State
 import json
+from .agent_based_api.v1 import Metric, register, Result, Service, State
 
 vrrp_states = {
     # https://github.com/acassen/keepalived/blob/8b2877ef5754a0a0ff5654f0508784d9a71fbc1e/keepalived/include/vrrp.h#L414-L420

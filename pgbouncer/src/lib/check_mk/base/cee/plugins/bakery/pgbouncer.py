@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import json
 from pathlib import Path
 from typing import TypedDict, List
 
@@ -55,7 +54,7 @@ def _get_linux_cfg_lines(cfg: dict) -> List[str]:
             lines.append('%s=%s' % (option.upper(), quote_shell_string(cfg[option])))
     return lines
 
-def get_pgbouncer_scriptlets(conf: pgbouncerBakeryConfig) -> ScriptletGenerator:
+def get_pgbouncer_scriptlets(conf: pgbouncerBakeryConfig) -> ScriptletGenerator: # pylint: disable=unused-argument
     installed_lines = ['logger -p Checkmk_Agent "Installed pgbouncer.py"']
     uninstalled_lines = ['logger -p Checkmk_Agent "Uninstalled pgbouncer.py"']
 

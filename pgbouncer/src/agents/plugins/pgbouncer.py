@@ -104,7 +104,7 @@ LOGGER = logging.getLogger(__name__)
 if sys.version_info[0] >= 3:
     UTF_8_NEWLINE_CHARS = re.compile(r"[\n\r\u2028\u000B\u0085\u2028\u2029]+")
 else:
-    UTF_8_NEWLINE_CHARS = re.compile(u"[\u000A\u000D\u2028\u000B\u0085\u2028\u2029]+")  # fmt: skip
+    UTF_8_NEWLINE_CHARS = re.compile("[\u000A\u000D\u2028\u000B\u0085\u2028\u2029]+")  # fmt: skip
 
 
 class OSNotImplementedError(NotImplementedError):
@@ -206,7 +206,7 @@ class PgbouncerBase:
         version_as_string = out.split()[1]
         return version_as_string
 
-    def get_condition_vars(self, numeric_version):
+    def get_condition_vars(self, numeric_version): # pylint: disable=unused-argument
         """Gets condition variables for other queries"""
         #if numeric_version > 9.2:
         #    return "state", "'idle'"
@@ -216,7 +216,7 @@ class PgbouncerBase:
         """Gets all client connections"""
         sql_cmd = (
             "SHOW CLIENTS;"
-        ) 
+        )
 
         out = self.run_sql_as_db_user(
             sql_cmd, rows_only=False, extra_args="-P footer=off"
@@ -228,7 +228,7 @@ class PgbouncerBase:
         """Gets all backend pools"""
         sql_cmd = (
             "SHOW POOLS;"
-        ) 
+        )
 
         out = self.run_sql_as_db_user(
             sql_cmd, rows_only=False, extra_args="-P footer=off"
@@ -240,7 +240,7 @@ class PgbouncerBase:
         """Gets all databases"""
         sql_cmd = (
             "SHOW DATABASES;"
-        ) 
+        )
 
         out = self.run_sql_as_db_user(
             sql_cmd, rows_only=False, extra_args="-P footer=off"
@@ -252,7 +252,7 @@ class PgbouncerBase:
         """Gets configuration limits (max_*)"""
         sql_cmd = (
             "SHOW CONFIG;"
-        ) 
+        )
 
         out = self.run_sql_as_db_user(
             sql_cmd, rows_only=True, extra_args="-P footer=off"
@@ -263,7 +263,6 @@ class PgbouncerBase:
             for line in out.splitlines()
             if line.startswith("max_")
         ])
-
 
     def get_version(self):
         """Wrapper around get_version_conn_time"""
@@ -670,7 +669,7 @@ class LinuxHelpers(Helpers):
 
 def open_env_file(file_to_open):
     """Wrapper around built-in open to be able to monkeypatch through all python versions"""
-    return open(file_to_open).readlines()
+    return open(file_to_open, encoding='utf-8').readlines()
 
 
 def parse_env_file(env_file):
@@ -795,10 +794,10 @@ def main(argv=None):
         pgbouncer_cfg_path = os.path.join(
             os.getenv("MK_CONFDIR", helper.get_default_path()), "pgbouncer.cfg"
         )
-        with open(pgbouncer_cfg_path) as opened_file:
+        with open(pgbouncer_cfg_path, encoding='utf-8') as opened_file:
             pgbouncer_cfg = opened_file.readlines()
         instances = parse_pgbouncer_cfg(pgbouncer_cfg, helper.get_conf_sep(), cfg)
-    except Exception:
+    except Exception: # pylint: disable=broad-except
         _, e = sys.exc_info()[:2]  # python2 and python3 compatible exception logging
         LOGGER.debug("try_parse_config: exception: %s", str(e))
 
