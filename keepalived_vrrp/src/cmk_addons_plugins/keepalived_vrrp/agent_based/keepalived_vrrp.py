@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 import json
-from .agent_based_api.v1 import Metric, register, Result, Service, State
+from cmk.agent_based.v2 import (
+    AgentSection,
+    CheckPlugin,
+    Metric,
+    Result,
+    Service,
+    State
+)
 
 vrrp_states = {
     # https://github.com/acassen/keepalived/blob/8b2877ef5754a0a0ff5654f0508784d9a71fbc1e/keepalived/include/vrrp.h#L414-L420
@@ -44,12 +51,12 @@ def check_keepalived_vrrp(item, section):
                     summary = "State: %s, VIPs: %s" % (state_pretty, vips))
             return
 
-register.agent_section(
+agent_section_keepalived_vrrp2 = AgentSection(
     name = "keepalived_vrrp",
     parse_function = parse_keepalived_vrrp,
 )
 
-register.check_plugin(
+check_plugin_keepalived_vrrp2 = CheckPlugin(
     name = "keepalived_vrrp",
     service_name = "Keepalived VRRP instance %s",
     discovery_function = discover_keepalived_vrrp,

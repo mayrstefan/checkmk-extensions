@@ -3,21 +3,21 @@
 	'description': 'Keepalived check for VRRP instances',
 	'download_url': 'https://github.com/mayrstefan/checkmk-extensions/tree/master/keepalived_vrrp',
 	'files': {
-		'agent_based': [ 'keepalived_vrrp.py' ],
 		'agents': [ 'plugins/keepalived_vrrp.sh' ],
-		'checkman': [ 'keepalived_vrrp' ],
+		'cmk_addons_plugins': [
+			'keepalived_vrrp/agent_based/keepalived_vrrp.py',
+			'keepalived_vrrp/checkman/keepalived_vrrp',
+			'keepalived_vrrp/graphing/graphing_keepalived_vrrp.py',
+			'keepalived_vrrp/rulesets/ruleset_keepalived_vrrp_bakery.py'
+		],
 		'lib': [
 			'check_mk/base/cee/plugins/bakery/keepalived_vrrp.py'
-		],
-		'web': [
-			'plugins/metrics/keepalived_vrrp.py',
-			'plugins/wato/keepalived_vrrp_bakery.py'
 		]
 	},
 	'name': 'keepalived_vrrp',
 	'title': 'Keepalived VRRP check',
-	'version': '0.0.5',
-	'version.min_required': '2.2.0',
-	'version.packaged': '2.2.0',
-	'version.usable_until': '2.4.0b'
+	'version': '0.1.0',
+	'version.min_required': '2.3.0',
+	'version.packaged': '2.3.0',
+	'version.usable_until': '2.4.99'
 }
