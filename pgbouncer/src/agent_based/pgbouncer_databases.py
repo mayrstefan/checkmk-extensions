@@ -40,7 +40,10 @@ def check_pgbouncer_databases(item, params, section):
     max_connections = float(database["max_connections"])
     if max_connections == 0:
         # fallback, use pool size if max_connections is not set
-        max_connections = float(database["pool_size"]) + float(database["reserve_pool"])
+        if "reserve_pool" in database:
+            max_connections = float(database["pool_size"]) + float(database["reserve_pool"])
+        else:
+            max_connections = float(database["pool_size"]) + float(database["reserve_pool_size"])
     connection_usage = float(database["current_connections"]) / max_connections
 
     yield Result(
@@ -58,8 +61,9 @@ def check_pgbouncer_databases(item, params, section):
             notice_only = True
             )
 
-    for metric_name in ("pool_size", "reserve_pool", "max_connections", "current_connections"):
-        yield Metric(name = metric_name, value = float(database[metric_name]), boundaries = (0.0, None))
+    for metric_name in ("pool_size", "reserve_pool", "reserve_pool_size", "max_connections", "current_connections"):
+        if metric_name in database:
+            yield Metric(name = metric_name, value = float(database[metric_name]), boundaries = (0.0, None))
 
 register.agent_section(
     name = "pgbouncer_databases",
