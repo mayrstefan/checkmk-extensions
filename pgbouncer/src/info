@@ -1,7 +1,7 @@
 {
 	'author': 'Mayr Stefan',
 	'description': 'PgBouncer check',
-	'download_url': 'https://github.com/mayrstefan/checkmk-extensions/tree/master/pgbouncer',
+	'download_url': 'https://github.com/mayrstefan/checkmk-extensions/tree/main/pgbouncer',
 	'files': {
 		'agent_based': [ 
 			'pgbouncer_databases.py',
@@ -23,7 +23,7 @@
 	},
 	'name': 'pgbouncer',
 	'title': 'PgBouncer check',
-	'version': '0.0.3',
+	'version': '0.0.4',
 	'version.min_required': '2.2.0',
 	'version.packaged': '2.2.0',
 	'version.usable_until': '2.3.99'
