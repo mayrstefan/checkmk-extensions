@@ -1,0 +1,16 @@
+{
+	'author': 'Mayr Stefan',
+	'description': 'Generic bulk wrapper for regular notification plugins which do not support bulk mode',
+	'download_url': 'https://github.com/mayrstefan/checkmk-extensions/tree/main/generic-bulk-wrapper',
+	'files': {
+		'notifications': [
+			'generic-bulk-wrapper.py'
+		]
+	},
+	'name': 'generic-bulk-wrapper',
+	'title': 'Generic bulk wrapper',
+	'version': '0.0.1',
+	'version.min_required': '2.3.0',
+	'version.packaged': '2.3.0',
+	'version.usable_until': '2.4.99'
+}
