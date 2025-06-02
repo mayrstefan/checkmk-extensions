@@ -18,7 +18,7 @@ fi
 # send signal to keepalived
 kill -s $(keepalived --signum=JSON) $(<${KEEPALIVED_PIDFILE})
 # most of the times we need to wait a little bit until the json status file is created
-for i in {1..10}; do
+for i in {1..50}; do
         if [ -e "${KEEPALIVED_STATUS_JSON}" ]; then
                 break
         else
