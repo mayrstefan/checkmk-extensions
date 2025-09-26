@@ -15,8 +15,19 @@ fi
 if [ ! -e "${KEEPALIVED_PIDFILE}" ]; then
 	exit 0
 fi
+# Setup infotifywait
+INOTIFYWAIT=$(which inotifywait)
+if [ -x "${INOTIFYWAIT}" ]; then
+        $INOTIFYWAIT --timeout 5 --quiet --quiet\
+                --event CLOSE_WRITE \
+                --include $(basename $KEEPALIVED_STATUS_JSON) \
+                $(dirname $KEEPALIVED_STATUS_JSON) &
+        INOTIFY_PID=$!
+fi
 # send signal to keepalived
 kill -s $(keepalived --signum=JSON) $(<${KEEPALIVED_PIDFILE})
+# Wait for infotifywait
+if [ -n "${INOTIFY_PID}" ]; then wait $INOTIFY_PID; fi
 # most of the times we need to wait a little bit until the json status file is created
 for i in {1..50}; do
         if [ -s "${KEEPALIVED_STATUS_JSON}" ]; then
