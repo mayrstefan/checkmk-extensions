@@ -26,7 +26,7 @@ def parse_keepalived_vrrp(string_table):
         return {}
     section = json.loads(string_table[0][0])
     if isinstance(section, list):
-        section=dict(vrrp=section)
+        section = {"vrrp": section}
     return section
 
 def discover_keepalived_vrrp(section):
