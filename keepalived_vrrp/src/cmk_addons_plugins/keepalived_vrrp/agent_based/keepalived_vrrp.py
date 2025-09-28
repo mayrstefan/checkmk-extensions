@@ -23,15 +23,18 @@ vrrp_states = {
 
 def parse_keepalived_vrrp(string_table):
     if len(string_table) == 0:
-        return []
-    return json.loads(string_table[0][0])
+        return {}
+    section = json.loads(string_table[0][0])
+    if isinstance(section, list):
+        section=dict(vrrp=section)
+    return section
 
 def discover_keepalived_vrrp(section):
-    for instance in section:
+    for instance in section.get('vrrp', []):
         yield Service(item=instance['data']['iname'])
 
 def check_keepalived_vrrp(item, section):
-    for instance in section:
+    for instance in section.get('vrrp', []):
         if item == instance['data']['iname']:
             vrrp_state = instance['data']['state']
             if vrrp_state in vrrp_states:
