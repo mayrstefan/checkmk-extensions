@@ -3,11 +3,16 @@ import json
 from cmk.agent_based.v2 import (
     AgentSection,
     CheckPlugin,
+    CheckResult,
+    DiscoveryResult,
     Metric,
     Result,
     Service,
-    State
+    State,
+    StringTable
 )
+
+Section = Mapping[str, Any]
 
 vrrp_states = {
     # https://github.com/acassen/keepalived/blob/8b2877ef5754a0a0ff5654f0508784d9a71fbc1e/keepalived/include/vrrp.h#L414-L420
@@ -21,7 +26,7 @@ vrrp_states = {
     98: { 'name': 'STOP', 'result': State.CRIT }
     }
 
-def parse_keepalived_vrrp(string_table):
+def parse_keepalived_vrrp(string_table: StringTable) -> Section:
     if len(string_table) == 0:
         return {}
     section = json.loads(string_table[0][0])
@@ -29,11 +34,11 @@ def parse_keepalived_vrrp(string_table):
         section = {"vrrp": section}
     return section
 
-def discover_keepalived_vrrp(section):
+def discover_keepalived_vrrp(section: Section) -> DiscoveryResult:
     for instance in section.get('vrrp', []):
         yield Service(item=instance['data']['iname'])
 
-def check_keepalived_vrrp(item, section):
+def check_keepalived_vrrp(item: str, section: Section) -> CheckResult:
     for instance in section.get('vrrp', []):
         if item == instance['data']['iname']:
             vrrp_state = instance['data']['state']
