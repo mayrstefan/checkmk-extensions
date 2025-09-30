@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import json
+from collections.abc import Mapping # type: ignore
+from typing import Any # type: ignore
 from cmk.agent_based.v2 import (
     AgentSection,
     CheckPlugin,
