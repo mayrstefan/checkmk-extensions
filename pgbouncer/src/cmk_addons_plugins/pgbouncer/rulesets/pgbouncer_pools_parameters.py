@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from cmk.rulesets.v1 import form_specs, Help, rule_specs, Title
+from cmk.rulesets.v1 import Help, Title
 from cmk.rulesets.v1.form_specs import (
     DefaultValue,
     DictElement,
@@ -9,7 +9,6 @@ from cmk.rulesets.v1.form_specs import (
     LevelDirection,
     SimpleLevels,
     String,
-    validators,
 )
 from cmk.rulesets.v1.rule_specs import CheckParameters, HostAndItemCondition, Topic
 
