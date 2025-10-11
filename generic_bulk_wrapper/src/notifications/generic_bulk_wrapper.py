@@ -30,7 +30,7 @@ def call_script(script_env: dict[str, str]) -> NoReturn:
     #   NOTIFY_PARAMETER_n+1 -> NOTIFY_PARAMETER_n
     script_name = script_env['NOTIFY_PARAMETER_1']
     param_re = re.compile('^NOTIFY_PARAMETER_[0-9]+$')
-    param_count = len(list(filter(lambda k: param_re.match(k), script_env)))
+    param_count = len([k for k in script_env.keys() if param_re.match(k)])
     # shift all parameters one position
     for i in range(1, param_count):
         script_env[f'NOTIFY_PARAMETER_{i}'] = script_env[f'NOTIFY_PARAMETER_{i+1}']
