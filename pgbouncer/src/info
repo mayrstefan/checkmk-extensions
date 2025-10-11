@@ -3,28 +3,24 @@
 	'description': 'PgBouncer check',
 	'download_url': 'https://github.com/mayrstefan/checkmk-extensions/tree/main/pgbouncer',
 	'files': {
-		'agent_based': [ 
-			'pgbouncer_databases.py',
-			'pgbouncer_pools.py'
-		],
 		'agents': [ 'plugins/pgbouncer.py' ],
-		'checkman': [ 
-			'pgbouncer_databases',
-			'pgbouncer_pools'
+		'cmk_addons_plugins': [
+			'pgbouncer/agent_based/pgbouncer_databases.py',
+			'pgbouncer/agent_based/pgbouncer_pools.py',
+			'pgbouncer/checkman/pgbouncer_databases',
+			'pgbouncer/checkman/pgbouncer_pools',
+			'pgbouncer/rulesets/rulesets_pgbouncer_bakery.py',
+			'pgbouncer/rulesets/pgbouncer_databases_parameters.py',
+			'pgbouncer/rulesets/pgbouncer_pools_parameters.py'
 		],
 		'lib': [
 			'check_mk/base/cee/plugins/bakery/pgbouncer.py'
-		],
-		'web': [
-			'plugins/wato/pgbouncer_bakery.py',
-			'plugins/wato/pgbouncer_databases_parameters.py',
-			'plugins/wato/pgbouncer_pools_parameters.py'
 		]
 	},
 	'name': 'pgbouncer',
 	'title': 'PgBouncer check',
-	'version': '0.0.4',
-	'version.min_required': '2.2.0',
-	'version.packaged': '2.2.0',
-	'version.usable_until': '2.3.99'
+	'version': '0.1.0',
+	'version.min_required': '2.3.0',
+	'version.packaged': '2.3.0',
+	'version.usable_until': '2.4.99'
 }
