@@ -55,8 +55,8 @@ def _get_linux_cfg_lines(cfg: dict) -> List[str]:
     return lines
 
 def get_keepalived_vrrp_scriptlets(conf: keepalived_vrrpBakeryConfig) -> ScriptletGenerator: # pylint: disable=unused-argument
-    installed_lines = ['logger -p Checkmk_Agent "Installed keepalived_vrrp.sh"']
-    uninstalled_lines = ['logger -p Checkmk_Agent "Uninstalled keepalived_vrrp.sh"']
+    installed_lines = ['logger "Installed keepalived_vrrp.sh"']
+    uninstalled_lines = ['logger "Uninstalled keepalived_vrrp.sh"']
 
     yield Scriptlet(step=DebStep.POSTINST, lines=installed_lines)
     yield Scriptlet(step=DebStep.POSTRM, lines=uninstalled_lines)
