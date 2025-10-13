@@ -55,8 +55,8 @@ def _get_linux_cfg_lines(cfg: dict) -> List[str]:
     return lines
 
 def get_pgbouncer_scriptlets(conf: pgbouncerBakeryConfig) -> ScriptletGenerator: # pylint: disable=unused-argument
-    installed_lines = ['logger -p Checkmk_Agent "Installed pgbouncer.py"']
-    uninstalled_lines = ['logger -p Checkmk_Agent "Uninstalled pgbouncer.py"']
+    installed_lines = ['logger "Installed pgbouncer.py"']
+    uninstalled_lines = ['logger "Uninstalled pgbouncer.py"']
 
     yield Scriptlet(step=DebStep.POSTINST, lines=installed_lines)
     yield Scriptlet(step=DebStep.POSTRM, lines=uninstalled_lines)
