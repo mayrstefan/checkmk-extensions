@@ -6,6 +6,7 @@
 		'agents': [ 'plugins/keepalived_vrrp.sh' ],
 		'cmk_addons_plugins': [
 			'keepalived_vrrp/agent_based/keepalived_vrrp.py',
+			'keepalived_vrrp/agent_based/keepalived_track_process.py',
 			'keepalived_vrrp/checkman/keepalived_vrrp',
 			'keepalived_vrrp/graphing/graphing_keepalived_vrrp.py',
 			'keepalived_vrrp/rulesets/ruleset_keepalived_vrrp_bakery.py'
