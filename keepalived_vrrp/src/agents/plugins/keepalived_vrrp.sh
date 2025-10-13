@@ -16,7 +16,7 @@ if [ ! -e "${KEEPALIVED_PIDFILE}" ]; then
 	exit 0
 fi
 # Setup infotifywait
-INOTIFYWAIT=$(which inotifywait)
+INOTIFYWAIT=$(which inotifywait 2>/dev/null)
 if [ -x "${INOTIFYWAIT}" ]; then
         $INOTIFYWAIT --timeout 5 --quiet --quiet\
                 --event CLOSE_WRITE \
