@@ -1,0 +1,30 @@
+{
+	'author': 'Mayr Stefan',
+	'description': 'Valkey check (fork of Checkmk Redis check)',
+	'download_url': 'https://github.com/mayrstefan/checkmk-extensions/tree/main/valkey',
+	'files': {
+		'agents': [ 'plugins/valkey' ],
+		'cmk_addons_plugins': [
+			'valkey/agent_based/valkey_base.py',
+			'valkey/agent_based/valkey_info.py',
+			'valkey/agent_based/valkey_info_clients.py',
+			'valkey/agent_based/valkey_info_persistence.py',
+			'valkey/checkman/valkey_info',
+			'valkey/checkman/valkey_info_clients',
+			'valkey/checkman/valkey_info_persistence',
+#			'valkey/rulesets/valkey_bakery.py',
+			'valkey/rulesets/valkey_info.py',
+			'valkey/rulesets/valkey_info_clients.py',
+			'valkey/rulesets/valkey_info_persistence.py'
+		],
+		'lib': [
+#			'check_mk/base/cee/plugins/bakery/valkey.py'
+		]
+	},
+	'name': 'valkey',
+	'title': 'Valkey check',
+	'version': '0.0.1',
+	'version.min_required': '2.3.0',
+	'version.packaged': '2.3.0',
+	'version.usable_until': '2.4.99'
+}

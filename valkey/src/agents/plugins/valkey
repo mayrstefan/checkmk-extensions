@@ -1,0 +1,141 @@
+#!/bin/bash
+# Copyright (C) 2019 Checkmk GmbH - License: GNU General Public License v2
+# This file is part of Checkmk (https://checkmk.com). It is subject to the terms and
+# conditions defined in the file COPYING, which is part of this source code package.
+
+# Reason for this no-op: shellcheck disable=... before the first command disables the error for the
+# entire script.
+:
+
+# Disable unused variable error (needed to keep track of version)
+# shellcheck disable=SC2034
+CMK_VERSION="2.5.0b1"
+
+# sample output of pgrep command
+# 1051 /usr/bin/valkey-server 127.0.0.1:6380
+# 1324 /usr/bin/valkey-server 127.0.0.1:6379
+
+# example cfg file /etc/check_mk/valkey.cfg
+#
+# VALKEY_INSTANCES=(My_First_Valkey My_Second_Valkey My_socket_Valkey)
+#
+# VALKEY_HOST_My_First_Valkey="127.0.0.1"
+# VALKEY_PORT_My_First_Valkey="6380"
+# VALKEY_PASSWORD_My_First_Valkey='MYPASSWORD'
+#
+# VALKEY_HOST_My_Second_Valkey="127.0.0.1"
+# VALKEY_PORT_My_Second_Valkey="6379"
+
+# VALKEY_HOST_My_socket_Valkey="/var/valkey/valkey.sock"
+# VALKEY_PORT_My_socket_Valkey="unix-socket"
+
+load_config() {
+    # source optional configuration file
+    if [ -e "$MK_CONFDIR/valkey.cfg" ]; then
+        # shellcheck source=../cfg_examples/valkey.cfg
+        . "$MK_CONFDIR/valkey.cfg"
+    fi
+}
+
+valkey_args() {
+    INSTANCE=$1
+
+    HOST="VALKEY_HOST_$INSTANCE"
+    PORT="VALKEY_PORT_$INSTANCE"
+    PASSWORD="VALKEY_PASSWORD_$INSTANCE"
+
+    # if autodetection is used, rewrite instance name for section output
+    if [[ "$IS_DETECTED" == true ]]; then
+        INSTANCE="${!HOST};${!PORT}"
+    fi
+
+    if [[ "${!PORT}" == "unix-socket" ]]; then
+        VALKEY_ARGS=("-s" "${!HOST}")
+    else
+        VALKEY_ARGS=("-h" "${!HOST}" "-p" "${!PORT}")
+    fi
+
+    VALKEY_ARGS+=("info")
+
+    # detect usable valkey-cli
+    if [[ "${!HOST}" == /omd/sites/* ]]; then
+        # use site valkey-cli for valkey instances in site
+        IFS="/" read -ra ADDR <<<"${!HOST}"
+        VALKEY_CLI_COMMAND="/omd/sites/${ADDR[3]}/bin/valkey-cli"
+    elif type valkey-cli &>/dev/null; then
+        VALKEY_CLI_COMMAND="valkey-cli"
+    elif type redis-cli &>/dev/null; then
+        VALKEY_CLI_COMMAND="valkey-cli"
+    else
+        VALKEY_CLI_COMMAND="echo 'error: no cli found'"
+        VALKEY_ARGS=()
+        return
+    fi
+
+    if [[ "${!PASSWORD}" ]] && [[ "${!PASSWORD}" != "None" ]]; then
+        VALKEY_CLI_COMMAND="VALKEYCLI_AUTH='${!PASSWORD}' ${VALKEY_CLI_COMMAND}"
+    fi
+}
+
+main() {
+    set -e -o pipefail
+
+    VALKEY_INSTANCES=()
+    IS_DETECTED=false
+
+    load_config
+
+    # if no servers in config file, try to detect
+    if [ ${#VALKEY_INSTANCES[@]} -eq 0 ]; then
+        IS_DETECTED=true
+        # find instances and remove entries like "*:6879", possible with docker container
+	DETECTED=$(pgrep -xa "valkey-server" 2>/dev/null | awk '/:[0-9]+/ && !/\*/ || /unixsocket:.*/ { print $3 }')
+
+        # add found valkey instances
+        for VALKEY_INSTANCE in $DETECTED; do
+            for inst in $VALKEY_INSTANCE; do
+                IFS=":" read -ra parts <<<"$inst"
+
+                # dot of IP can not be used in variable names
+                VALKEY_NAME=$(echo "$inst" | tr ':./' '_')
+
+                # create dynamic variables
+                if [[ "${parts[0]}" == "unixsocket" ]]; then
+                    # handle checkmk valkey instances as configured sockets
+                    declare "VALKEY_HOST_$VALKEY_NAME=${parts[1]}"
+                    declare "VALKEY_PORT_$VALKEY_NAME=unix-socket"
+                else
+                    declare "VALKEY_HOST_$VALKEY_NAME=${parts[0]}"
+                    declare "VALKEY_PORT_$VALKEY_NAME=${parts[1]}"
+                fi
+
+                # append instance to array
+                VALKEY_INSTANCES+=("${VALKEY_NAME}")
+            done
+        done
+    fi
+
+    # print valkey section, if servers are found
+    [ "${VALKEY_INSTANCES[*]}" ] || exit 0
+
+    echo "<<<valkey_info:sep(58)>>>"
+
+    for INSTANCE in "${VALKEY_INSTANCES[@]}"; do
+        valkey_args "${INSTANCE}"
+        # print server section
+        echo "[[[$INSTANCE|${!HOST}|${!PORT}]]]"
+
+        output=$(waitmax 3 bash -c "${VALKEY_CLI_COMMAND} ${VALKEY_ARGS[*]}" 2>&1 || true)
+
+        if [[ "$output" == *"Could not connect to Valkey at ${!HOST}: Permission denied"* ]]; then
+            # mark error explicitly for easier parsing
+            echo "error: $output"
+        else
+            echo "$output"
+        fi
+
+    done
+
+}
+
+[ -z "${MK_SOURCE_ONLY}" ] && main "$@"
