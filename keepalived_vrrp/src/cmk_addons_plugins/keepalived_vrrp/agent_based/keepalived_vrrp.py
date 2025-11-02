@@ -33,7 +33,7 @@ def parse_keepalived_vrrp(string_table: StringTable) -> Section:
         return {}
     section = json.loads(string_table[0][0])
     if isinstance(section, list):
-        section = {"vrrp": section}
+        section = {'vrrp': section}
     return section
 
 def discover_keepalived_vrrp(section: Section) -> DiscoveryResult:
@@ -49,24 +49,24 @@ def check_keepalived_vrrp(item: str, section: Section) -> CheckResult:
                 state_pretty = vrrp_states[vrrp_state]['name']
             else:
                 state = State.UNKNOWN
-                state_pretty = 'Unknown state %i' % vrrp_state
+                state_pretty = f'Unknown state { vrrp_state }'
             # all metrics we have are simple counters
-            for k, v in instance['stats'].items():
-                yield Metric('keepalived_%s' % k, v)
+            for metric_name, metric_value in instance['stats'].items():
+                yield Metric(f'keepalived_{ metric_name }', metric_value)
             vips = '-' # default: empty
             if 'vips' in instance['data']:
                 vips = ", ".join(instance['data']['vips'])
             yield Result(
-                    state = state,
-                    summary = "State: %s, VIPs: %s" % (state_pretty, vips))
-            return
+                state = state,
+                summary = f"State: { state_pretty }, VIPs: { vips  }"
+            )
 
-agent_section_keepalived_vrrp2 = AgentSection(
+agent_section_keepalived_vrrp = AgentSection(
     name = "keepalived_vrrp",
     parse_function = parse_keepalived_vrrp,
 )
 
-check_plugin_keepalived_vrrp2 = CheckPlugin(
+check_plugin_keepalived_vrrp = CheckPlugin(
     name = "keepalived_vrrp",
     service_name = "Keepalived VRRP instance %s",
     discovery_function = discover_keepalived_vrrp,
