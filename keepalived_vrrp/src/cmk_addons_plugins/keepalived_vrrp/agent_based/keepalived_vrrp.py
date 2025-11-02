@@ -60,6 +60,7 @@ def check_keepalived_vrrp(item: str, section: Section) -> CheckResult:
                 state = state,
                 summary = f"State: { state_pretty }, VIPs: { vips  }"
             )
+            return
 
 agent_section_keepalived_vrrp = AgentSection(
     name = "keepalived_vrrp",
