@@ -12,9 +12,18 @@ from cmk.notification_plugins import utils
 
 OPT_DEBUG = "-d" in sys.argv
 BULK_MODE = "--bulk" in sys.argv
+MAX_LENGTH = 2**16 # 64K to avoid OSError 7 when check output is too large
 
 env_base = os.environ
 env_base['PATH'] += f':{ omd_root }/local/share/check_mk/notifications'
+
+def limit_str(value: str) -> str:
+    if MAX_LENGTH and len(value) > MAX_LENGTH:
+        return (
+            value[:MAX_LENGTH]
+            + "...\\nAttention: Removed remaining content because it was too long."
+        )
+    return value
 
 def call_script(script_env: dict[str, str]) -> NoReturn:
     """Call regular notification script in normal (non-bulk) mode."""
@@ -58,10 +67,10 @@ if __name__ == "__main__":
         if OPT_DEBUG:
             sys.stderr.write(f'{ len(parameters) } parameters: { parameters }\n')
             sys.stderr.write(f'{ len(contexts) } contexts: { contexts }\n')
-        env_base |= { f'NOTIFY_{ k }': v for k, v in parameters.items() }
+        env_base |= { f'NOTIFY_{ k }': limit_str(v) for k, v in parameters.items() }
         for context in contexts:
             env_context = {
-                f'NOTIFY_{ k }': v for k, v in context.items() if not k.startswith('OMD_')
+                f'NOTIFY_{ k }': limit_str(v) for k, v in context.items() if not k.startswith('OMD_')
             }
             call_script(env_base | env_context)
     if OPT_DEBUG:
