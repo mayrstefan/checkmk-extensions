@@ -92,7 +92,10 @@ except ImportError:
 # If you want to use the old behaviour just use old_stdout.
 if sys.version_info[0] >= 3:
     new_stdout = io.TextIOWrapper(
-        sys.stdout.buffer, newline="\n", encoding=sys.stdout.encoding, errors=sys.stdout.errors
+        sys.stdout.buffer,
+        newline="\n",
+        encoding=sys.stdout.encoding,
+        errors=sys.stdout.errors,
     )
     old_stdout, sys.stdout = sys.stdout, new_stdout
 
@@ -177,7 +180,13 @@ class PgbouncerBase:
 
     @abc.abstractmethod
     def run_sql_as_db_user(
-        self, sql_cmd, extra_args="", field_sep=";", quiet=True, rows_only=True, mixed_cmd=False
+        self,
+        sql_cmd,
+        extra_args="",
+        field_sep=";",
+        quiet=True,
+        rows_only=True,
+        mixed_cmd=False,
     ):
         # type: (str, str, str, bool, bool, bool) -> str
         """This method implements the system specific way to call the psql interface"""
@@ -206,17 +215,15 @@ class PgbouncerBase:
         version_as_string = out.split()[1]
         return version_as_string
 
-    def get_condition_vars(self, numeric_version): # pylint: disable=unused-argument
+    def get_condition_vars(self, numeric_version):  # pylint: disable=unused-argument
         """Gets condition variables for other queries"""
-        #if numeric_version > 9.2:
+        # if numeric_version > 9.2:
         #    return "state", "'idle'"
         return "current_query", "'<IDLE>'"
 
     def get_clients(self):
         """Gets all client connections"""
-        sql_cmd = (
-            "SHOW CLIENTS;"
-        )
+        sql_cmd = "SHOW CLIENTS;"
 
         out = self.run_sql_as_db_user(
             sql_cmd, rows_only=False, extra_args="-P footer=off"
@@ -226,9 +233,7 @@ class PgbouncerBase:
 
     def get_pools(self):
         """Gets all backend pools"""
-        sql_cmd = (
-            "SHOW POOLS;"
-        )
+        sql_cmd = "SHOW POOLS;"
 
         out = self.run_sql_as_db_user(
             sql_cmd, rows_only=False, extra_args="-P footer=off"
@@ -238,9 +243,7 @@ class PgbouncerBase:
 
     def get_databases(self):
         """Gets all databases"""
-        sql_cmd = (
-            "SHOW DATABASES;"
-        )
+        sql_cmd = "SHOW DATABASES;"
 
         out = self.run_sql_as_db_user(
             sql_cmd, rows_only=False, extra_args="-P footer=off"
@@ -250,19 +253,13 @@ class PgbouncerBase:
 
     def get_limits(self):
         """Gets configuration limits (max_*)"""
-        sql_cmd = (
-            "SHOW CONFIG;"
-        )
+        sql_cmd = "SHOW CONFIG;"
 
         out = self.run_sql_as_db_user(
             sql_cmd, rows_only=True, extra_args="-P footer=off"
         )
 
-        return "\n".join([
-            line
-            for line in out.splitlines()
-            if line.startswith("max_")
-        ])
+        return "\n".join([line for line in out.splitlines() if line.startswith("max_")])
 
     def get_version(self):
         """Wrapper around get_version_conn_time"""
@@ -295,7 +292,9 @@ class PgbouncerBase:
 
         try:
             databases = self.get_databases()
-            database_text = "\n[databases_start]\n%s\n[databases_end]" % "\n".join(databases)
+            database_text = "\n[databases_start]\n%s\n[databases_end]" % "\n".join(
+                databases
+            )
             version = self.get_server_version()
             row, idle = self.get_condition_vars(version)
         except PgbouncerPsqlError:
@@ -339,6 +338,7 @@ class PgbouncerBase:
         out += "\n%s" % self.get_connection_time()
         sys.stdout.write("%s\n" % out)
 
+
 def _sanitize_sql_query(out):
     # type: (bytes) -> str
     utf_8_out = ensure_str(out)
@@ -359,7 +359,13 @@ def _sanitize_sql_query(out):
 
 class PgbouncerWin(PgbouncerBase):
     def run_sql_as_db_user(
-        self, sql_cmd, extra_args="", field_sep=";", quiet=True, rows_only=True, mixed_cmd=False
+        self,
+        sql_cmd,
+        extra_args="",
+        field_sep=";",
+        quiet=True,
+        rows_only=True,
+        mixed_cmd=False,
     ):
         # type: (str, str, str, bool | None, bool | None,bool | None) -> str
         """This method implements the system specific way to call the psql interface"""
@@ -452,20 +458,20 @@ class PgbouncerWin(PgbouncerBase):
                 "Program Files (x86)\\PostgreSQL",
                 "PostgreSQL",
             ]:
-                psql_path = (
-                    "{drive}:\\{program_path}\\{pg_version}\\bin\\{psql_binary_name}.exe".format(
-                        drive=drive,
-                        program_path=program_path,
-                        pg_version=pg_version.split(".", 1)[
-                            0
-                        ],  # Only the major version is relevant
-                        psql_binary_name=self.psql_binary_name,
-                    )
+                psql_path = "{drive}:\\{program_path}\\{pg_version}\\bin\\{psql_binary_name}.exe".format(
+                    drive=drive,
+                    program_path=program_path,
+                    pg_version=pg_version.split(".", 1)[
+                        0
+                    ],  # Only the major version is relevant
+                    psql_binary_name=self.psql_binary_name,
                 )
                 if os.path.isfile(psql_path):
                     return psql_path
 
-        raise IOError("Could not determine %s bin and its path." % self.psql_binary_name)
+        raise IOError(
+            "Could not determine %s bin and its path." % self.psql_binary_name
+        )
 
     def get_psql_binary_dirname(self):
         # type: () -> str
@@ -476,7 +482,7 @@ class PgbouncerWin(PgbouncerBase):
         """Get the pgbouncer version and the time for the query connection"""
 
         # TODO: Verify this time measurement
-        start_time = time.time() # pylint: disable=possibly-used-before-assignment
+        start_time = time.time()  # pylint: disable=possibly-used-before-assignment
         out = self.get_server_version()
         diff = time.time() - start_time
         return out, "%.3f" % diff
@@ -484,10 +490,22 @@ class PgbouncerWin(PgbouncerBase):
 
 class PgbouncerLinux(PgbouncerBase):
     def run_sql_as_db_user(
-        self, sql_cmd, extra_args="", field_sep=";", quiet=True, rows_only=True, mixed_cmd=False
+        self,
+        sql_cmd,
+        extra_args="",
+        field_sep=";",
+        quiet=True,
+        rows_only=True,
+        mixed_cmd=False,
     ):
         # type: (str, str, str, bool, bool, bool) -> str
-        base_cmd_list = ["su", "-", self.db_user, "-c", r"""PGPASSFILE=%s %s -X %s -A0 -F'%s'%s"""]
+        base_cmd_list = [
+            "su",
+            "-",
+            self.db_user,
+            "-c",
+            r"""PGPASSFILE=%s %s -X %s -A0 -F'%s'%s""",
+        ]
         extra_args += " -U %s" % self.pg_user
         extra_args += " -d %s" % self.pg_database
         extra_args += " -h %s" % self.pg_host
@@ -514,7 +532,10 @@ class PgbouncerLinux(PgbouncerBase):
             )
 
             receiving_pipe = subprocess.Popen(  # pylint: disable=consider-using-with
-                base_cmd_list, stdin=cmd_to_pipe.stdout, stdout=subprocess.PIPE, env=self.my_env
+                base_cmd_list,
+                stdin=cmd_to_pipe.stdout,
+                stdout=subprocess.PIPE,
+                env=self.my_env,
             )
             out = receiving_pipe.communicate()[0]
 
@@ -561,7 +582,9 @@ class PgbouncerLinux(PgbouncerBase):
         out = ensure_str(proc.communicate()[0])
 
         if proc.returncode != 0:
-            raise RuntimeError("Could not determine %s executable." % self.psql_binary_name)
+            raise RuntimeError(
+                "Could not determine %s executable." % self.psql_binary_name
+            )
 
         return out.strip()
 
@@ -571,7 +594,9 @@ class PgbouncerLinux(PgbouncerBase):
 
     def get_version_and_connection_time(self):
         # type: () -> tuple[str, str]
-        usage_start = resource.getrusage(resource.RUSAGE_CHILDREN) # pylint: disable=possibly-used-before-assignment
+        usage_start = resource.getrusage(
+            resource.RUSAGE_CHILDREN
+        )  # pylint: disable=possibly-used-before-assignment
         out = self.get_server_version()
         usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
 
@@ -668,7 +693,7 @@ class LinuxHelpers(Helpers):
 
 def open_env_file(file_to_open):
     """Wrapper around built-in open to be able to monkeypatch through all python versions"""
-    return open(file_to_open, encoding='utf-8').readlines()
+    return open(file_to_open, encoding="utf-8").readlines()
 
 
 def parse_env_file(env_file):
@@ -701,7 +726,12 @@ def _parse_INSTANCE_value(value, config_separator):
         keys = keys + [""]
     env_file, pg_user, pg_passfile, instance_name = keys
     env_file = env_file.strip()
-    return env_file, pg_user, pg_passfile, instance_name or env_file.split(os.sep)[-1].split(".")[0]
+    return (
+        env_file,
+        pg_user,
+        pg_passfile,
+        instance_name or env_file.split(os.sep)[-1].split(".")[0],
+    )
 
 
 def parse_pgbouncer_cfg(pgbouncer_cfg, config_separator, cfg):
@@ -776,7 +806,9 @@ def main(argv=None):
     logging.basicConfig(
         format="%(levelname)s %(asctime)s %(name)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        level={0: logging.WARN, 1: logging.INFO, 2: logging.DEBUG}.get(opt.verbose, logging.DEBUG),
+        level={0: logging.WARN, 1: logging.INFO, 2: logging.DEBUG}.get(
+            opt.verbose, logging.DEBUG
+        ),
     )
 
     cfg = {
@@ -786,17 +818,17 @@ def main(argv=None):
         "pg_host": None,
         "pg_port": "6432",
         "pg_version": None,
-        "pg_passfile": ""
+        "pg_passfile": "",
     }
     instances = []  # type: list[dict[str, str | None]]
     try:
         pgbouncer_cfg_path = os.path.join(
             os.getenv("MK_CONFDIR", helper.get_default_path()), "pgbouncer.cfg"
         )
-        with open(pgbouncer_cfg_path, encoding='utf-8') as opened_file:
+        with open(pgbouncer_cfg_path, encoding="utf-8") as opened_file:
             pgbouncer_cfg = opened_file.readlines()
         instances = parse_pgbouncer_cfg(pgbouncer_cfg, helper.get_conf_sep(), cfg)
-    except Exception: # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         _, e = sys.exc_info()[:2]  # python2 and python3 compatible exception logging
         LOGGER.debug("try_parse_config: exception: %s", str(e))
 
