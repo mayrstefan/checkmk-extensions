@@ -17,10 +17,9 @@
 			'valkey/rulesets/valkey_info_clients.py',
 			'valkey/rulesets/valkey_info_persistence.py'
 		],
-# Waiting for https://forum.checkmk.com/t/valkey-support-as-well-as-redis/53529/11
-#		'lib': [
-#			'check_mk/base/cee/plugins/bakery/valkey.py'
-#		]
+		'lib': [
+			'check_mk/base/cee/plugins/bakery/valkey.py'
+		]
 	},
 	'name': 'valkey',
 	'title': 'Valkey check',
