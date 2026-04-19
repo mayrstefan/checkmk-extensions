@@ -35,7 +35,7 @@ class ValkeyInstance(TypedDict):
     password: password_store.PasswordId | str | None
 
 
-ValkeyConfig = Literal["autodetect"] | tuple[Literal["static"], Sequence[RedisInstance]]
+ValkeyConfig = Literal["autodetect"] | tuple[Literal["static"], Sequence[ValkeyInstance]]
 
 
 def get_valkey_files(conf: ValkeyConfig) -> FileGenerator:
