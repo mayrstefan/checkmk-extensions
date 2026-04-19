@@ -594,7 +594,7 @@ class PgbouncerLinux(PgbouncerBase):
 
     def get_version_and_connection_time(self):
         # type: () -> tuple[str, str]
-        usage_start = resource.getrusage(
+        usage_start = resource.getrusage( # pylint: disable=possibly-used-before-assignment
             resource.RUSAGE_CHILDREN
         )  # pylint: disable=possibly-used-before-assignment
         out = self.get_server_version()
