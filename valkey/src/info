@@ -12,7 +12,7 @@
 			'valkey/checkman/valkey_info',
 			'valkey/checkman/valkey_info_clients',
 			'valkey/checkman/valkey_info_persistence',
-#			'valkey/rulesets/valkey_bakery.py',
+			'valkey/rulesets/valkey_bakery.py',
 			'valkey/rulesets/valkey_info.py',
 			'valkey/rulesets/valkey_info_clients.py',
 			'valkey/rulesets/valkey_info_persistence.py'
