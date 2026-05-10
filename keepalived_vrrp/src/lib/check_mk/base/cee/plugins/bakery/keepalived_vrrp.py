@@ -48,6 +48,8 @@ def get_keepalived_vrrp_plugin_files(conf: keepalived_vrrpBakeryConfig) -> FileG
 
 def _get_linux_cfg_lines(cfg: dict) -> List[str]:
     lines = []
+    if 'binary' in cfg and cfg['binary'] != '':
+        lines.append('KEEPALIVED_BIN="%s"' % quote_shell_string(cfg['binary']))
     if 'pidfile' in cfg and cfg['pidfile'] != '':
         lines.append('KEEPALIVED_PIDFILE="%s"' % quote_shell_string(cfg['pidfile']))
     if 'jsonfile' in cfg and cfg['jsonfile'] != '':

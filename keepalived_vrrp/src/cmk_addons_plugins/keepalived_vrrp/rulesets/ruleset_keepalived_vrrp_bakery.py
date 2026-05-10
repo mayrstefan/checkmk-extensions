@@ -15,16 +15,19 @@ def _parameter_form_keepalived_vrrp_bakery():
     return Dictionary(
         #help=_("This will deploy the keepalived_vrrp plugin."),
         elements = {
+            "binary": DictElement(
+                parameter_form = String(
+                    title = Title("Keepalived binary (Default: keepalived)"),
+                )
+            ),
             "pidfile": DictElement(
                 parameter_form = String(
                     title = Title("Keepalived pidfile (Default: /var/run/keepalived.pid)"),
-                #allow_empty=False,
                 )
             ),
             "jsonfile": DictElement(
                 parameter_form = String(
                     title = Title("Keepalived JSON status file (Default: /tmp/keepalived.json)"),
-                #allow_empty=False,
                 )
             ),
             "interval": DictElement(

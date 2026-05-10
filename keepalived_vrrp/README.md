@@ -6,6 +6,13 @@ The agent sends a signal to keepalived and waits up to 5 seconds for the json st
 ## Agent configuration
 In /etc/checkmk/keepalived_vrrp.cfg the paths to the keepalived pidfile and the output json can be configured
 ```
+KEEPALIVED_BIN="keepalived"
 KEEPALIVED_PIDFILE="/var/run/keepalived.pid"
+KEEPALIVED_STATUS_JSON="/tmp/keepalived.json"
+```
+Example for HAPEE VRRP
+```
+KEEPALIVED_BIN="/opt/hapee-extras/sbin/hapee-vrrp"
+KEEPALIVED_PIDFILE="/var/run/hapee-extras/hapee-vrrp.pid"
 KEEPALIVED_STATUS_JSON="/tmp/keepalived.json"
 ```

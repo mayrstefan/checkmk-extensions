@@ -2,6 +2,7 @@
 CMK_VERSION="2.2.0p17"
 
 # Default configuration
+declare KEEPALIVED_BIN="keepalived"
 declare KEEPALIVED_PIDFILE="/var/run/keepalived.pid"
 declare KEEPALIVED_STATUS_JSON="/tmp/keepalived.json"
 declare -r KEEPALIVED_PLUGIN_CFG="${MK_CONFDIR}/keepalived_vrrp.cfg"
@@ -25,7 +26,7 @@ if [ -x "${INOTIFYWAIT}" ]; then
         INOTIFY_PID=$!
 fi
 # send signal to keepalived
-kill -s $(keepalived --signum=JSON) $(<${KEEPALIVED_PIDFILE})
+kill -s $(${KEEPALIVED_BIN} --signum=JSON) $(<${KEEPALIVED_PIDFILE})
 # Wait for infotifywait
 if [ -n "${INOTIFY_PID}" ]; then wait $INOTIFY_PID; fi
 # most of the times we need to wait a little bit until the json status file is created
