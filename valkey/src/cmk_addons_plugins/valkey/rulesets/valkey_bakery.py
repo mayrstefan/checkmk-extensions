@@ -5,7 +5,7 @@
 
 from typing import Any
 
-from cmk.rulesets.v1 import Label, Title, Help
+from cmk.rulesets.v1 import Title, Help
 from cmk.rulesets.v1.form_specs import (
     CascadingSingleChoice,
     CascadingSingleChoiceElement,
@@ -14,7 +14,6 @@ from cmk.rulesets.v1.form_specs import (
     Dictionary,
     FixedValue,
     Integer,
-    InputHint,
     List,
     Password,
     String,

@@ -12,7 +12,6 @@ from cmk.utils.password_store import lookup_for_bakery
 from .bakery_api.v1 import (
     FileGenerator,
     OS,
-    password_store,
     Plugin,
     PluginConfig,
     register,
@@ -70,7 +69,7 @@ def _get_valkey_config(conf: ValkeyConfig) -> Iterator[str]:
         case "autodetect", _:
             yield "# Autodetect instances"
             return
-        case "static", list(instances):
+        case "static", list(ValkeyInstance) as instances:
             for valkey_instance in instances:
                 instance = valkey_instance["instance"]
                 connection = valkey_instance["connection"]
