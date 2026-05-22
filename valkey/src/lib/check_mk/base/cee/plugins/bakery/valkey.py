@@ -69,7 +69,7 @@ def _get_valkey_config(conf: ValkeyConfig) -> Iterator[str]:
         case "autodetect", _:
             yield "# Autodetect instances"
             return
-        case "static", list(ValkeyInstance) as instances:
+        case "static", list() as instances:
             for valkey_instance in instances:
                 instance = valkey_instance["instance"]
                 connection = valkey_instance["connection"]
