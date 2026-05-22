@@ -5,22 +5,21 @@
 
 from typing import Any
 
-from cmk.gui.agent_bakery import RulespecGroupMonitoringAgentsAgentPlugins
-from cmk.gui.i18n import _
-from cmk.gui.plugins.wato.utils import HostRulespec, rulespec_registry
-from cmk.gui.valuespec import (
-    Alternative,
-    CascadingDropdown,
+from cmk.rulesets.v1 import Label, Title, Help
+from cmk.rulesets.v1.form_specs import (
+    CascadingSingleChoice,
+    CascadingSingleChoiceElement,
+    DefaultValue,
+    DictElement,
     Dictionary,
     FixedValue,
-    Hostname,
-    ListOf,
-    Migrate,
-    NetworkPort,
-    TextInput,
+    Integer,
+    InputHint,
+    List,
+    Password,
+    String,
 )
-from cmk.gui.wato import MigrateToIndividualOrStoredPassword
-from cmk.utils.rulesets.definition import RuleGroup
+from cmk.rulesets.v1.rule_specs import AgentConfig, Topic
 
 
 def _migrate(value: object) -> Any:
@@ -38,110 +37,116 @@ def _migrate(value: object) -> Any:
     return value
 
 
-def _valuespec_agent_config_valkey() -> CascadingDropdown:
-    return CascadingDropdown(
-        title=_("Valkey databases"),
-        help=_(
-            "If you activate this option, then the agent plug-in <tt>valkey</tt> will be deployed. "
-            "You can configure multiple instances or auto detect running instances."
-        ),
-        choices=[
-            ("autodetect", _("Autodetect instances")),
-            (
-                "static",
-                _("Specific list of instances"),
-                ListOf(
-                    Migrate(
-                        valuespec=Dictionary(
-                            elements=[
-                                (
-                                    "instance",
-                                    TextInput(
-                                        title=_("Name of the instance in the monitoring"),
-                                        allow_empty=False,
-                                    ),
-                                ),
-                                (
-                                    "connection",
-                                    CascadingDropdown(
-                                        title=_("Connection"),
-                                        choices=[
-                                            (
-                                                "tcp",
-                                                _("TCP"),
-                                                Dictionary(
-                                                    elements=[
-                                                        (
-                                                            "host",
-                                                            Hostname(
-                                                                title=_("IPv4 address"),
-                                                                default_value="127.0.0.1",
-                                                                allow_empty=False,
-                                                            ),
-                                                        ),
-                                                        (
-                                                            "port",
-                                                            NetworkPort(
-                                                                title=_("TCP port number"),
-                                                                default_value=6379,
-                                                            ),
-                                                        ),
-                                                    ],
-                                                    optional_keys=False,
-                                                ),
-                                            ),
-                                            (
-                                                "unix-socket",
-                                                _("Unix socket"),
-                                                Dictionary(
-                                                    elements=[
-                                                        (
-                                                            "socket",
-                                                            TextInput(
-                                                                title=_("Path to Unix socket"),
-                                                                allow_empty=False,
-                                                            ),
-                                                        ),
-                                                    ],
-                                                    optional_keys=False,
-                                                ),
-                                            ),
-                                        ],
-                                    ),
-                                ),
-                                (
-                                    "password",
-                                    Alternative(
-                                        title=_("Password"),
-                                        elements=[
-                                            FixedValue(
-                                                value=None,
-                                                title=_("Don't use password"),
-                                                totext=_("Connect without password"),
-                                            ),
-                                            MigrateToIndividualOrStoredPassword(
-                                                title=_("Password"),
-                                                allow_empty=False,
-                                            ),
-                                        ],
-                                    ),
-                                ),
-                            ],
-                            optional_keys=False,
-                        ),
-                        migrate=_migrate,
+def _parameter_form_valkey_bakery() -> Dictionary:
+    return Dictionary(
+        elements={
+            "deployment": DictElement(
+                required=True,
+                parameter_form=CascadingSingleChoice(
+                    title=Title("Valkey databases"),
+                    help_text=Help(
+                        "If you activate this option, then the agent plug-in <tt>valkey</tt> will be deployed. "
+                        "           You can configure multiple instances or auto detect running instances."
                     ),
+                    elements=[
+                        CascadingSingleChoiceElement(
+                            name="autodetect",
+                            title=Title("Autodetect instances"),
+                            parameter_form=FixedValue(value=None),
+                        ),
+                        CascadingSingleChoiceElement(
+                            name="static",
+                            title=Title("Specific list of instances"),
+                            parameter_form=List(
+                                element_template=Dictionary(
+                                    elements={
+                                        "instance": DictElement(
+                                            parameter_form=String(
+                                                title=Title(
+                                                    "Name of the instance in the monitoring"
+                                                ),
+                                            ),
+                                            required=True,
+                                        ),
+                                        "connection": DictElement(
+                                            parameter_form=CascadingSingleChoice(
+                                                title=Title("Connection"),
+                                                elements=[
+                                                    CascadingSingleChoiceElement(
+                                                        name="tcp",
+                                                        title=Title("TCP"),
+                                                        parameter_form=Dictionary(
+                                                            elements={
+                                                                "host": DictElement(
+                                                                    parameter_form=String(
+                                                                        title=Title(
+                                                                            "IPv4 address"
+                                                                        ),
+                                                                        prefill=DefaultValue(
+                                                                            "127.0.0.1"
+                                                                        ),
+                                                                    ),
+                                                                    required=True,
+                                                                ),
+                                                                "port": DictElement(
+                                                                    parameter_form=Integer(
+                                                                        title=Title(
+                                                                            "TCP port number"
+                                                                        ),
+                                                                        prefill=DefaultValue(
+                                                                            6379
+                                                                        ),
+                                                                    ),
+                                                                    required=True,
+                                                                ),
+                                                            }
+                                                        ),
+                                                    ),
+                                                    CascadingSingleChoiceElement(
+                                                        name="unixsocket",
+                                                        title=Title("Unix-Socket"),
+                                                        parameter_form=Dictionary(
+                                                            elements={
+                                                                "socket": DictElement(
+                                                                    parameter_form=String(
+                                                                        title=Title(
+                                                                            "Path to unix socket"
+                                                                        ),
+                                                                    ),
+                                                                    required=True,
+                                                                ),
+                                                            }
+                                                        ),
+                                                    ),
+                                                ],
+                                                prefill=DefaultValue("tcp"),
+                                            ),
+                                        ),
+                                        "password": DictElement(
+                                            parameter_form=Password(
+                                                title=Title("Password"),
+                                            ),
+                                        ),
+                                    },
+                                ),
+                            ),
+                        ),
+                        CascadingSingleChoiceElement(
+                            name="do_not_deploy",
+                            title=Title("Do not deploy the Valkey plug-in"),
+                            parameter_form=FixedValue(value=None),
+                        ),
+                    ],
+                    prefill=DefaultValue("autodetect"),
                 ),
             ),
-            (None, _("Do not deploy the Valkey plug-in")),
-        ],
+        },
     )
 
 
-rulespec_registry.register(
-    HostRulespec(
-        group=RulespecGroupMonitoringAgentsAgentPlugins,
-        name=RuleGroup.AgentConfig("valkey"),
-        valuespec=_valuespec_agent_config_valkey,
-    )
+rule_spec_valkey_bakery = AgentConfig(
+    name="valkey",
+    title=Title("Valkey databases"),
+    topic=Topic.DATABASES,
+    parameter_form=_parameter_form_valkey_bakery,
 )

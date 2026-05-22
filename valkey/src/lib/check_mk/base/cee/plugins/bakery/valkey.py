@@ -5,7 +5,9 @@
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from shlex import quote
-from typing import Literal, TypedDict
+from typing import Literal, NotRequired, TypedDict
+
+from cmk.utils.password_store import lookup_for_bakery
 
 from .bakery_api.v1 import (
     FileGenerator,
@@ -30,17 +32,28 @@ class ValkeyInstance(TypedDict):
     instance: str
     connection: (
         tuple[Literal["tcp"], ConnectionParamsTcp]
-        | tuple[Literal["unix-socket"], ConnectionParamsSocket]
+        | tuple[Literal["unixsocket"], ConnectionParamsSocket]
     )
-    password: password_store.PasswordId | str | None
+    password: tuple[str, str, tuple[str, str]]
 
 
-ValkeyConfig = Literal["autodetect"] | tuple[Literal["static"], Sequence[ValkeyInstance]]
+class ValkeyConfig(TypedDict):
+    deployment: NotRequired[
+        tuple[Literal["autodetect"], None]
+        | tuple[Literal["static"], Sequence[ValkeyInstance]]
+        | tuple[Literal["do_not_deploy"], None]
+    ]
 
 
 def get_valkey_files(conf: ValkeyConfig) -> FileGenerator:
+    deployment = conf.get("deployment", ("autodetect", None))
+    # do not package any file if do_not_deploy was selected
+    match deployment:
+        case "do_not_deploy", _:
+            return
+    # add plugin file
     yield Plugin(base_os=OS.LINUX, source=Path("valkey"))
-
+    # generate configuration file
     yield PluginConfig(
         base_os=OS.LINUX,
         lines=list(_get_valkey_config(conf)),
@@ -50,29 +63,39 @@ def get_valkey_files(conf: ValkeyConfig) -> FileGenerator:
 
 
 def _get_valkey_config(conf: ValkeyConfig) -> Iterator[str]:
-    if conf == "autodetect":
-        yield "# Autodetect instances"
-        return
+    deployment = conf.get("deployment", ("autodetect", None))
+    match deployment:
+        case "do_not_deploy", _:
+            return
+        case "autodetect", _:
+            yield "# Autodetect instances"
+            return
+        case "static", list(instances):
+            for valkey_instance in instances:
+                instance = valkey_instance["instance"]
+                connection = valkey_instance["connection"]
+                port: str | int
+                if connection[0] == "tcp":
+                    host = connection[1]["host"]
+                    port = connection[1]["port"]
+                else:
+                    assert connection[0] == "unixsocket"
+                    host = connection[1]["socket"]
+                    port = "unix-socket"
+                match valkey_instance["password"]:
+                    case _marker, "explicit_password", (_uuid, password):
+                        ...
+                    case _marker, "stored_password", (pwd_id, str()):
+                        password = lookup_for_bakery(pwd_id)
+                    case other:
+                        raise ValueError(f"Invalid password type: {other!r}")
 
-    for valkey_instance in conf[1]:
-        instance = valkey_instance["instance"]
-        connection = valkey_instance["connection"]
-        port: str | int
-        if connection[0] == "tcp":
-            host = connection[1]["host"]
-            port = connection[1]["port"]
-        else:
-            assert connection[0] == "unix-socket"
-            host = connection[1]["socket"]
-            port = "unix-socket"
-        password = valkey_instance["password"]
+                yield f"VALKEY_HOST_{instance}={quote(host)}"
+                yield f"VALKEY_PORT_{instance}={quote(str(port))}"
+                if password is not None:
+                    yield f"VALKEY_PASSWORD_{instance}={quote(password)}"
 
-        yield f"VALKEY_HOST_{instance}={quote(host)}"
-        yield f"VALKEY_PORT_{instance}={quote(str(port))}"
-        if password is not None:
-            yield f"VALKEY_PASSWORD_{instance}={quote(password_store.extract(password))}"
-
-    yield "VALKEY_INSTANCES=(%s)" % " ".join(e["instance"] for e in conf[1])
+            yield "VALKEY_INSTANCES=(%s)" % " ".join(e["instance"] for e in instances)
 
 
 register.bakery_plugin(
