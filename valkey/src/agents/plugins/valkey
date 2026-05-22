@@ -73,7 +73,7 @@ valkey_args() {
     fi
 
     if [[ "${!PASSWORD}" ]] && [[ "${!PASSWORD}" != "None" ]]; then
-        VALKEY_CLI_COMMAND="VALKEYCLI_AUTH='${!PASSWORD}' ${VALKEY_CLI_COMMAND}"
+        VALKEY_CLI_COMMAND="REDISCLI_AUTH='${!PASSWORD}' ${VALKEY_CLI_COMMAND}"
     fi
 }
 
