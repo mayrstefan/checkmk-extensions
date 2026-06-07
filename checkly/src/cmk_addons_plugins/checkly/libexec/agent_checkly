@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""
+Special Agent to query serice statusus from ChecklyHQ
+"""
+
+import sys
+import argparse
+from enum import Enum
+import requests
+
+
+class State(Enum):
+    """Checkmk status type"""
+
+    OK = 0
+    WARNING = 1
+    CRITICAL = 2
+    UNKNOWN = 3
+
+
+STATE_TEXT = {
+    State.OK: "PASSED",
+    State.WARNING: "FAILED",
+    State.CRITICAL: "FAILED",
+    State.UNKNOWN: "UNKNOWN",
+}
+
+
+# pylint: disable=too-few-public-methods
+class Service:
+    """Representation of a Checkmk local check"""
+
+    name: str = None
+    state: State = State.UNKNOWN
+    summary: str = None
+    metrics: dict = {}
+
+    # pylint: disable=too-many-arguments
+    def __init__(self, name, state=None, summary=None, metrics=None, from_json=None):
+        self.name = name
+        if state:
+            self.state = state
+        if summary:
+            self.summary = summary
+        if metrics:
+            self.metrics = metrics
+        if from_json:
+            self.name = from_json["name"]
+            self.summary = (
+                f'Last checked at { from_json["updated_at"] }'
+                f' from { from_json["lastRunLocation"] }'
+            )
+            self.state = State.OK
+            self.metrics = {}
+            # base metrics
+            for metric in ["longestRun", "shortestRun"]:
+                if metric in from_json and from_json[metric]:
+                    self.metrics[metric] = f"{ from_json[metric] }ms"
+            if from_json["hasErrors"]:
+                # something went wrong on the Checkly side
+                self.state = State.UNKNOWN
+                self.summary += " (errors at Checkly)"
+            if from_json["isDegraded"]:
+                self.state = State.WARNING
+                self.summary += " (degradation limit reached)"
+            if from_json["hasFailures"]:
+                self.state = State.CRITICAL
+                self.summary += " (currently failing)"
+            if "sslDaysRemaining" in from_json:
+                if from_json["sslDaysRemaining"] and from_json["sslDaysRemaining"] <= 0:
+                    self.state = State.CRITICAL
+                self.metrics["sslDaysRemaining"] = f'{ from_json["sslDaysRemaining"] }d'
+
+    def print_local_check(self):
+        """output service data as a one liner in the local check format"""
+        metrics = []
+        for (name, value) in self.metrics.items():
+            metrics.append(f"{name}={value}")
+        print(
+            f'{self.state.value} "{self.name}"'
+            f' {"|".join(metrics) or "-"}'
+            f" {self.summary or STATE_TEXT[self.state]}"
+        )
+
+
+def get_check_statuses(account_id: str, token: str):
+    """Queries all check statuses from the Checkly API and return a Service object for each one"""
+    api_url: str = "https://api.checklyhq.com/v1/check-statuses"
+    api_headers: dict = {
+        "X-Checkly-Account": account_id,
+        "Authorization": f"Bearer {token}",
+    }
+    api_svc = "Checkly API"
+    try:
+        result = requests.get(api_url, headers=api_headers)
+        if 200 <= result.status_code <= 299:
+            statuses = result.json()
+            yield Service(
+                api_svc,
+                State.OK,
+                f"{ result.reason }",
+                {"response_time": f"{ result.elapsed.total_seconds() }s"},
+            )
+            for check_status in statuses:
+                yield Service(check_status["name"], from_json=check_status)
+        elif result.status_code == 401:
+            yield Service(api_svc, State.CRITICAL, "Invalid bearer token")
+        else:
+            yield Service(
+                api_svc,
+                State.CRITICAL,
+                f"Unexpected status code: { result.status_code }",
+            )
+    except requests.exceptions.RequestException as ex:
+        yield Service(
+            api_svc, State.CRITICAL, f"Error when calling { api_url }: { ex }"
+        )
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser("agent_checkly")
+    parser.add_argument("--account", help="Checkly account id", required=True)
+    parser.add_argument(
+        "--token", help="Bearer token for authentication", required=True
+    )
+    args = parser.parse_args()
+    print("<<<local>>>")
+    for svc in get_check_statuses(args.account, args.token):
+        svc.print_local_check()

@@ -1,0 +1,15 @@
+title: Checkly services
+author: Mayr Stefan
+license: GPL
+distribution: none
+description:
+  Integrations all Checkly monitored services into Checkmk
+
+perfdata:
+  longest and shortest time between service status changes and for SSL services days until certificate expires
+
+item:
+  Checkly API and a Checkmk service for each service in Checkly
+
+inventory:
+  Automatic inventory of all Checkly monitored services
