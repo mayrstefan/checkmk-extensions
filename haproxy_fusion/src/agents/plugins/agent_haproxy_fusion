@@ -1,0 +1,216 @@
+#!/usr/bin/env python3
+"""
+Special Agent to query HAProxy Fusion health
+"""
+import argparse
+import configparser
+import logging
+import os
+import sys
+from enum import Enum
+import requests
+
+
+class State(Enum):
+    """Checkmk status type"""
+
+    OK = 0
+    WARNING = 1
+    CRITICAL = 2
+    UNKNOWN = 3
+
+
+STATE_TEXT = {
+    State.OK: "PASSED",
+    State.WARNING: "FAILED",
+    State.CRITICAL: "FAILED",
+    State.UNKNOWN: "UNKNOWN",
+}
+
+LOGGER = logging.getLogger(__name__)
+
+DEFAULT_AUTH_TYPE = "none"
+DEFAULT_PREFIX = "HAProxy Fusion"
+DEFAULT_USER_AGENT = "CheckmkMonitoring/0.0.3"
+DEFAULT_CFG_FILE = os.path.join(os.getenv("MK_CONFDIR", ""), "haproxy_fusion.cfg")
+DEFAULT_CFG_SECTION = {
+    "prefix": DEFAULT_PREFIX,
+    "auth_type": DEFAULT_AUTH_TYPE,
+    "user_agent": DEFAULT_USER_AGENT,
+}
+
+# pylint: disable=too-few-public-methods
+class Service:
+    """Representation of a Checkmk local check"""
+
+    name: str = None
+    state: State = State.UNKNOWN
+    summary: str = None
+    metrics: dict = {}
+
+    # pylint: disable=too-many-arguments
+    def __init__(self, name, state=None, summary=None, metrics=None, from_json=None):
+        self.name = name
+        if state:
+            self.state = state
+        if summary:
+            self.summary = summary
+        if metrics:
+            self.metrics = metrics
+        if from_json:
+            self.summary = (
+                f"Status { from_json['status'] }:"
+                f" { from_json['message'] if 'message' in from_json else '-' },"
+                f" Tags: { ', '.join(from_json['tags']) }"
+            )
+            self.metrics = {}
+            if from_json["status"] == "green":
+                self.state = State.OK
+            elif from_json["status"] == "yellow":
+                self.state = State.WARNING
+            elif from_json["status"] == "red":
+                self.state = State.CRITICAL
+            else:
+                self.state = State.UNKNOWN
+            for instance in from_json["instances"]:
+                if "address" in instance and "healthy" in instance:
+                    self.summary += (
+                        f"\n{ instance['address'] }, Healthy: { instance['healthy'] }"
+                    )
+                if "Address" in instance and "Status" in instance:
+                    self.summary += (
+                        f"\n{ instance['Address'] }, Status: { instance['Status'] }"
+                    )
+
+    def print_local_check(self):
+        """output service data as a one liner in the local check format"""
+        metrics = []
+        for (name, value) in self.metrics.items():
+            metrics.append(f"{name}={value}")
+        summary = self.summary or STATE_TEXT[self.state]
+        summary = summary.replace("\n", "\\n")
+        print(
+            f'{self.state.value} "{self.name}"'
+            f' {"|".join(metrics) or "-"}'
+            f" { summary }"
+        )
+
+
+def get_healthz(conf):
+    """
+    Queries all healthz API endpoint from HAProxy Fusion
+    and returns a Service object for each component
+    """
+    if not conf.url:
+        LOGGER.error("url was not configured nor given as a command line argument")
+        raise KeyError("url")
+    basic = None
+    headers = {"Accept": "application/json", "User-Agent": conf.user_agent}
+    params = {}
+    svc_name = f"{ conf.prefix } Health"
+    verify = conf.verify
+    # Ensure True/False are Boolean, else this is a string to a ca bundle
+    if str(verify).lower() == "true":
+        verify = True
+    elif str(verify).lower() == "false":
+        verify = False
+    if conf.auth_type == "basic":
+        basic = requests.auth.HTTPBasicAuth(conf.username, conf.password)
+    elif conf.auth_type == "apikey":
+        params["ApiKey"] = conf.key
+    elif conf.auth_type == "x-api-key":
+        headers["X-API-Key"] = conf.key
+    elif conf.auth_type == "x-fusion-apikey":
+        headers["X-Fusion-ApiKey"] = conf.key
+    try:
+        result = requests.get(
+            conf.url, params=params, headers=headers, auth=basic, verify=verify
+        )
+        if result.status_code == 200:
+            components = result.json()
+            yield Service(
+                svc_name,
+                State.OK,
+                f"{ result.reason } - all components are healthy",
+                {"response_time": f"{ result.elapsed.total_seconds() }s"},
+            )
+            for component in components:
+                yield Service(
+                    f"{ conf.prefix } { component['name'] }", from_json=component
+                )
+        elif result.status_code == 401:
+            yield Service(svc_name, State.CRITICAL, "Invalid authentication")
+        elif result.status_code == 500:
+            yield Service(
+                svc_name,
+                State.CRITICAL,
+                f"{ result.reason } - one or more components are not healthy",
+            )
+        else:
+            yield Service(
+                svc_name,
+                State.CRITICAL,
+                f"Unexpected status code: { result.status_code }",
+            )
+    except requests.exceptions.RequestException as ex:
+        yield Service(
+            svc_name, State.CRITICAL, f"Error when calling { conf.url }: { ex }"
+        )
+        sys.exit(1)
+
+
+def get_config(cfg_file):
+    """reads $MKCONF_DIR/haproxy_fusion.cfg and returns result as a dict"""
+    config = configparser.ConfigParser(DEFAULT_CFG_SECTION)
+    LOGGER.debug("trying to read %r", cfg_file)
+    files_read = config.read(cfg_file)
+    LOGGER.info("read configration file(s): %r", files_read)
+    section_name = "HAPROXY_FUSION" if config.sections() else "DEFAULT"
+    conf_dict = dict(config.items(section_name))
+    return conf_dict
+
+
+def parse_arguments(cfg_defaults=None):
+    """parses command line arguments and uses settings from config file as defaults"""
+    parser = argparse.ArgumentParser(
+        "agent_haproxy_fusion",
+        description="2 in 1 (Special) Agent for HAProxy Fusion Health status",
+    )
+
+    if cfg:
+        parser.set_defaults(**cfg_defaults)
+
+    parser.add_argument("--url")
+    parser.add_argument("--prefix")
+    parser.add_argument(
+        "--auth-type",
+        choices=["none", "basic", "apikey", "x-api-key", "x-fusion-apikey"],
+    )
+    parser.add_argument("-k", "--key")
+    parser.add_argument("-u", "--username")
+    parser.add_argument("-p", "--password")
+    parser.add_argument("--user-agent")
+    parser.add_argument("--verify")
+    # Parameters we might see when running as a regular agent plugin
+    parser.add_argument(
+        "--debug", action="store_true", help="""Debug mode: raise Python exceptions"""
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        help="""Verbose mode (for even more output use -vvv)""",
+    )
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    # cfg = None # pylint: disable=invalid-name
+    cfg = DEFAULT_CFG_SECTION
+    if "MK_CONFDIR" in os.environ and os.path.exists(DEFAULT_CFG_FILE):
+        cfg = get_config(DEFAULT_CFG_FILE)
+    args = parse_arguments(cfg)
+
+    print("<<<local>>>")
+    for svc in get_healthz(args):
+        svc.print_local_check()

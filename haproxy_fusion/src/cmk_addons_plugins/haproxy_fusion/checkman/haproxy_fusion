@@ -1,0 +1,15 @@
+title: HAProxy Fusion
+author: Mayr Stefan
+license: GPL
+distribution: none
+description:
+  Checks HAProxy Fusion Health
+
+perfdata:
+  API response time
+
+item:
+  HAProxy Fusion overall health status and optional all components health status
+
+inventory:
+  Automatic inventory of all HAProxy Fusion components
