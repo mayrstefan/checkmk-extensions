@@ -61,7 +61,7 @@ class Service:
             self.summary = (
                 f"Status { from_json['status'] }:"
                 f" { from_json['message'] if 'message' in from_json else '-' },"
-                f" Tags: { ', '.join(from_json['tags']) }"
+                f" Tags: { ', '.join(from_json['tags']) if from_json['tags'] else '-' }"
             )
             self.metrics = {}
             if from_json["status"] == "green":
@@ -72,15 +72,16 @@ class Service:
                 self.state = State.CRITICAL
             else:
                 self.state = State.UNKNOWN
-            for instance in from_json["instances"]:
-                if "address" in instance and "healthy" in instance:
-                    self.summary += (
-                        f"\n{ instance['address'] }, Healthy: { instance['healthy'] }"
-                    )
-                if "Address" in instance and "Status" in instance:
-                    self.summary += (
-                        f"\n{ instance['Address'] }, Status: { instance['Status'] }"
-                    )
+            if from_json["instances"]:
+                for instance in from_json["instances"]:
+                    if "address" in instance and "healthy" in instance:
+                        self.summary += (
+                            f"\n{ instance['address'] }, Healthy: { instance['healthy'] }"
+                        )
+                    if "Address" in instance and "Status" in instance:
+                        self.summary += (
+                            f"\n{ instance['Address'] }, Status: { instance['Status'] }"
+                        )
 
     def print_local_check(self):
         """output service data as a one liner in the local check format"""
