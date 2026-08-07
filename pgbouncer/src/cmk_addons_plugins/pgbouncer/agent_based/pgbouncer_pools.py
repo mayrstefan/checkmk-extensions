@@ -11,10 +11,11 @@ from cmk.agent_based.v2 import (
     Result,
     Service,
     State,
-    StringTable
+    StringTable,
 )
 
 Section = Mapping[str, Any]
+
 
 def parse_pgbouncer_pools(string_table: StringTable) -> Section:
     pools = {}
@@ -39,29 +40,48 @@ def parse_pgbouncer_pools(string_table: StringTable) -> Section:
         pools[pool_name] = pool
     return pools
 
+
 def discover_pgbouncer_pools(section: Section) -> DiscoveryResult:
     for pool in section.keys():
         yield Service(item=pool)
 
-def check_pgbouncer_pools(item: str, params: Mapping[str, Any], section: Section) -> CheckResult:
+
+def check_pgbouncer_pools(
+    item: str, params: Mapping[str, Any], section: Section
+) -> CheckResult:
     pool = section.get(item)
     if not pool:
         yield Result(state=State.UNKNOWN, summary="pool has been deleted")
         return
-    maxwait = float(pool["maxwait_us"])/1000000
-    yield Result(state=State.OK, summary="%.2f seconds" % (maxwait), details="Mode: %s" % (pool["pool_mode"]))
+    maxwait = float(pool["maxwait_us"]) / 1000000
+    yield Result(
+        state=State.OK,
+        summary="%.2f seconds" % (maxwait),
+        details="Mode: %s" % (pool["pool_mode"]),
+    )
 
     yield from check_levels(
-            maxwait,
-            levels_upper=(params["maxwait_warn_crit"]),
-            metric_name="maxwait",
-            label="Maximum waiting time in seconds",
-            boundaries=(0.0, None),
-            notice_only=True
-            )
+        maxwait,
+        levels_upper=(params["maxwait_warn_crit"]),
+        metric_name="maxwait",
+        label="Maximum waiting time in seconds",
+        boundaries=(0.0, None),
+        notice_only=True,
+    )
 
-    for metric_name in ("cl_active", "cl_waiting", "sv_active", "sv_idle", "sv_used", "sv_tested", "sv_login"):
-        yield Metric(name=metric_name, value=float(pool[metric_name]), boundaries=(0.0, None))
+    for metric_name in (
+        "cl_active",
+        "cl_waiting",
+        "sv_active",
+        "sv_idle",
+        "sv_used",
+        "sv_tested",
+        "sv_login",
+    ):
+        yield Metric(
+            name=metric_name, value=float(pool[metric_name]), boundaries=(0.0, None)
+        )
+
 
 agent_section_pgbouncer_pools = AgentSection(
     name="pgbouncer_pools",
@@ -73,6 +93,6 @@ check_plugin_pgbouncer_pools = CheckPlugin(
     service_name="PgBouncer Pool maxwait %s",
     discovery_function=discover_pgbouncer_pools,
     check_function=check_pgbouncer_pools,
-    check_default_parameters={ "maxwait_warn_crit": ("fixed", (5, 10)) },
-    check_ruleset_name="pgbouncer_pools"
+    check_default_parameters={"maxwait_warn_crit": ("fixed", (5, 10))},
+    check_ruleset_name="pgbouncer_pools",
 )

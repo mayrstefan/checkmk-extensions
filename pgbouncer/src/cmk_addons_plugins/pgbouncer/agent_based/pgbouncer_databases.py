@@ -11,10 +11,11 @@ from cmk.agent_based.v2 import (
     Result,
     Service,
     State,
-    StringTable
+    StringTable,
 )
 
 Section = Mapping[str, Any]
+
 
 def parse_pgbouncer_databases(string_table: StringTable) -> Section:
     databases = {}
@@ -39,11 +40,15 @@ def parse_pgbouncer_databases(string_table: StringTable) -> Section:
         databases[database_name] = database
     return databases
 
+
 def discover_pgbouncer_databases(section: Section) -> DiscoveryResult:
     for database in section.keys():
         yield Service(item=database)
 
-def check_pgbouncer_databases(item: str, params: Mapping[str, Any], section: Section) -> CheckResult:
+
+def check_pgbouncer_databases(
+    item: str, params: Mapping[str, Any], section: Section
+) -> CheckResult:
     database = section.get(item)
     if not database:
         yield Result(state=State.UNKNOWN, summary="database has been deleted")
@@ -53,29 +58,50 @@ def check_pgbouncer_databases(item: str, params: Mapping[str, Any], section: Sec
     if max_connections == 0:
         # fallback, use pool size if max_connections is not set
         if "reserve_pool" in database:
-            max_connections = float(database["pool_size"]) + float(database["reserve_pool"])
+            max_connections = float(database["pool_size"]) + float(
+                database["reserve_pool"]
+            )
         else:
-            max_connections = float(database["pool_size"]) + float(database["reserve_pool_size"])
+            max_connections = float(database["pool_size"]) + float(
+                database["reserve_pool_size"]
+            )
     connection_usage = float(database["current_connections"]) / max_connections
 
     yield Result(
-               state=State.OK,
-               summary="Connection usage: %.0f%%" % (100.0 * connection_usage),
-               details="Host: %s, Port: %s, Database: %s, Mode: %s" % (database["host"], database["port"], database["database"], database["pool_mode"])
-               )
+        state=State.OK,
+        summary="Connection usage: %.0f%%" % (100.0 * connection_usage),
+        details="Host: %s, Port: %s, Database: %s, Mode: %s"
+        % (
+            database["host"],
+            database["port"],
+            database["database"],
+            database["pool_mode"],
+        ),
+    )
 
     yield from check_levels(
-            100.0 * connection_usage,
-            levels_upper=(params["connection_usage_warn_crit"]),
-            metric_name="connection_usage",
-            label="Connection usage in %",
-            boundaries=(0.0, 100.0),
-            notice_only=True
+        100.0 * connection_usage,
+        levels_upper=(params["connection_usage_warn_crit"]),
+        metric_name="connection_usage",
+        label="Connection usage in %",
+        boundaries=(0.0, 100.0),
+        notice_only=True,
+    )
+
+    for metric_name in (
+        "pool_size",
+        "reserve_pool",
+        "reserve_pool_size",
+        "max_connections",
+        "current_connections",
+    ):
+        if metric_name in database:
+            yield Metric(
+                name=metric_name,
+                value=float(database[metric_name]),
+                boundaries=(0.0, None),
             )
 
-    for metric_name in ("pool_size", "reserve_pool", "reserve_pool_size", "max_connections", "current_connections"):
-        if metric_name in database:
-            yield Metric(name=metric_name, value=float(database[metric_name]), boundaries=(0.0, None))
 
 agent_section_pgbouncer = AgentSection(
     name="pgbouncer_databases",
@@ -87,6 +113,6 @@ check_plugin_pgbouncer = CheckPlugin(
     service_name="PgBouncer Database connections %s",
     discovery_function=discover_pgbouncer_databases,
     check_function=check_pgbouncer_databases,
-    check_default_parameters={ "connection_usage_warn_crit": ("fixed", (90.0, 95.0)) },
-    check_ruleset_name="pgbouncer_databases"
+    check_default_parameters={"connection_usage_warn_crit": ("fixed", (90.0, 95.0))},
+    check_ruleset_name="pgbouncer_databases",
 )
