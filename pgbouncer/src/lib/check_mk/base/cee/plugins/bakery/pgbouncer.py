@@ -61,8 +61,8 @@ def _get_linux_cfg_lines(cfg: dict) -> List[str]:
 
 
 def get_pgbouncer_scriptlets(
-    conf: pgbouncerBakeryConfig,
-) -> ScriptletGenerator:  # pylint: disable=unused-argument
+    conf: pgbouncerBakeryConfig, # pylint: disable=unused-argument
+) -> ScriptletGenerator:
     installed_lines = ['logger "Installed pgbouncer.py"']
     uninstalled_lines = ['logger "Uninstalled pgbouncer.py"']
 
